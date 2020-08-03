@@ -23,5 +23,6 @@ var DOWNLOAD_PATH = path.resolve(__dirname, '../downloads');
 module.exports = {
   SKILL_STATUS_UNASSIGNED: 'Unassigned',
   SKILL_STATUS_ASSIGNED: 'Assigned',
-  DOWNLOAD_PATH: DOWNLOAD_PATH
+  DOWNLOAD_PATH: DOWNLOAD_PATH,
+  TEST_SVG_PATH: '../data/test_svg.svg'
 };

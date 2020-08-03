@@ -140,8 +140,11 @@ describe('SvgFilenameEditor', function() {
       deferred.resolve('sample-csrf-token');
       return deferred.promise;
     });
-    // @ts-ignore inorder to ignore other Image object properties that
-    // should be declared.
+    // This throws "Argument of type 'mockImageObject' is not assignable to
+    // parameter of type 'HTMLImageElement'.". This is because
+    // 'HTMLImageElement' has around 250 more properties. We have only defined
+    // the properties we need in 'mockImageObject'.
+    // @ts-expect-error
     spyOn(window, 'Image').and.returnValue(new mockImageObject());
 
     svgFilenameCtrl = $componentController('svgFilenameEditor');
@@ -241,8 +244,10 @@ describe('SvgFilenameEditor', function() {
       svgFilenameCtrl.createRect();
     }
     expect(svgFilenameCtrl.canvas.getObjects().length).toBe(6);
+    expect(svgFilenameCtrl.isUndoEnabled()).toBe(true);
     svgFilenameCtrl.onUndo();
     expect(svgFilenameCtrl.canvas.getObjects().length).toBe(5);
+    expect(svgFilenameCtrl.isRedoEnabled()).toBe(true);
     svgFilenameCtrl.onRedo();
     expect(svgFilenameCtrl.canvas.getObjects().length).toBe(6);
     svgFilenameCtrl.canvas.setActiveObject(
@@ -253,6 +258,7 @@ describe('SvgFilenameEditor', function() {
     expect(svgFilenameCtrl.canvas.getObjects().length).toBe(6);
     svgFilenameCtrl.onRedo();
     expect(svgFilenameCtrl.canvas.getObjects().length).toBe(5);
+    expect(svgFilenameCtrl.isClearEnabled()).toBe(true);
     svgFilenameCtrl.onClear();
     expect(svgFilenameCtrl.objectUndoStack.length).toBe(0);
   });
@@ -328,6 +334,42 @@ describe('SvgFilenameEditor', function() {
     expect(svgFilenameCtrl.canvas.getObjects()[1].get('type')).toBe('polyline');
   });
 
+  it('should create a bezier curve', function() {
+    svgFilenameCtrl.createRect();
+    svgFilenameCtrl.createQuadraticBezier();
+    expect(svgFilenameCtrl.isDrawModeBezier()).toBe(true);
+    svgFilenameCtrl.canvas.trigger('object:moving', {
+      target: {
+        name: 'p0',
+        left: 100,
+        top: 100
+      }
+    });
+    svgFilenameCtrl.canvas.trigger('object:moving', {
+      target: {
+        name: 'p1',
+        left: 200,
+        top: 200
+      }
+    });
+    svgFilenameCtrl.canvas.trigger('object:moving', {
+      target: {
+        name: 'p2',
+        left: 300,
+        top: 300
+      }
+    });
+    svgFilenameCtrl.onStrokeChange();
+    svgFilenameCtrl.onFillChange();
+    svgFilenameCtrl.onSizeChange();
+    svgFilenameCtrl.createQuadraticBezier();
+    expect(svgFilenameCtrl.isDrawModeBezier()).toBe(false);
+    expect(svgFilenameCtrl.canvas.getObjects()[1].get('path')).toEqual(
+      [['M', 100, 100], ['Q', 200, 200, 300, 300]]
+    );
+    expect(svgFilenameCtrl.canvas.getObjects()[1].get('type')).toBe('path');
+  });
+
   it('should trigger object selection and scaling events', function() {
     svgFilenameCtrl.createRect();
     svgFilenameCtrl.createText();
@@ -353,8 +395,11 @@ describe('SvgFilenameEditor', function() {
     var responseText = ")]}'\n{ \"filename\": \"imageFile1.svg\" }";
     /* eslint-enable quotes */
 
-    // @ts-ignore in order to ignore JQuery properties that should
-    // be declared.
+    // This throws "Argument of type '() => Promise<any, any, any>' is not
+    // assignable to parameter of type '{ (url: string, ...):
+    // jqXHR<any>; ...}'.". We need to suppress this error because we need
+    // to mock $.ajax to this function purposes.
+    // @ts-expect-error
     spyOn($, 'ajax').and.callFake(function() {
       var d = $.Deferred();
       d.resolve(responseText);
@@ -378,8 +423,11 @@ describe('SvgFilenameEditor', function() {
   it('should handle rejection when saving an svg file fails', function() {
     svgFilenameCtrl.createRect();
     var errorMessage = 'Error on saving svg file';
-    // @ts-ignore in order to ignore JQuery properties that should
-    // be declared.
+    // This throws "Argument of type '() => Promise<any, any, any>' is not
+    // assignable to parameter of type '{ (url: string, ...):
+    // jqXHR<any>; ...}'.". We need to suppress this error because we need
+    // to mock $.ajax to this function purposes.
+    // @ts-expect-error
     spyOn($, 'ajax').and.callFake(function() {
       var d = $.Deferred();
       d.reject({
@@ -546,11 +594,17 @@ describe('SvgFilenameEditor with image save destination as ' +
     spyOn(contextService, 'getImageSaveDestination').and.returnValue(
       AppConstants.IMAGE_SAVE_DESTINATION_LOCAL_STORAGE);
 
-    // @ts-ignore inorder to ignore other Image object properties that
-    // should be declared.
+    // This throws "Argument of type 'mockImageObject' is not assignable to
+    // parameter of type 'HTMLImageElement'.". This is because
+    // 'HTMLImageElement' has around 250 more properties. We have only defined
+    // the properties we need in 'mockImageObject'.
+    // @ts-expect-error
     spyOn(window, 'Image').and.returnValue(new mockImageObject());
-    // @ts-ignore inorder to ignore other FileReader object properties that
-    // should be declared.
+    // This throws "Argument of type 'mockReaderObject' is not assignable
+    // to parameter of type 'FileReader'.". This is because
+    // 'FileReader' has around 15 more properties. We have only defined
+    // the properties we need in 'mockReaderObject'.
+    // @ts-expect-error
     spyOn(window, 'FileReader').and.returnValue(new mockReaderObject());
 
     svgFilenameCtrl = $componentController('svgFilenameEditor');

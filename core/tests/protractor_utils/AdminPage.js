@@ -17,6 +17,7 @@
  * tests.
  */
 
+var action = require('./action.js');
 var forms = require('./forms.js');
 var general = require('./general.js');
 var waitFor = require('./waitFor.js');
@@ -84,6 +85,23 @@ var AdminPage = function() {
     by.css('.protractor-test-regeneration-error-message'));
   var usernameSection = element(
     by.css('.protractor-test-dropdown-username-section'));
+  // Adding a new community reviewer.
+  var addReviewerName = element(by.css(
+    '.protractor-test-add-reviewer-username'));
+  var selectReviewerRole = element(by.css(
+    '.protractor-test-select-reviewer-role'));
+  var addReviewerFormSubmitButton = element(by.css(
+    '.protractor-test-add-reviewer-form-submit-button'));
+
+  // Viewing community reviewers by role.
+  var reviewerMethodDropdown = element(by.css(
+    '.protractor-test-reviewer-role-method'));
+  var reviewerRoleValueOption = element(by.css(
+    '.protractor-test-reviewer-role-value'));
+  var viewReviewerRoleButton = element(by.css(
+    '.protractor-test-view-reviewer-role-button'));
+  var reviewerUsernamesResult = element(by.css(
+    '.protractor-test-reviewer-roles-result'));
 
   // The reload functions are used for mobile testing
   // done via Browserstack. These functions may cause
@@ -459,6 +477,38 @@ var AdminPage = function() {
 
   this.expectUsernameToBeChanged = async function(newUsername) {
     expect(usernameSection.getText()).toEqual(newUsername);
+  };
+
+  this.addReviewer = async function(name, newRole) {
+    await action.click('Admin Roles Tab', adminRolesTab);
+    // Change values for "add reviewer for community" form, and submit it.
+    await action.sendKeys('Add reviewer name', addReviewerName, name);
+    await action.sendKeys('Select reviewer role', selectReviewerRole, newRole);
+    await action.click('Add Reviewer button', addReviewerFormSubmitButton);
+    await waitFor.visibilityOf(
+      statusMessage, 'Confirmation message not visible');
+    await waitFor.textToBePresentInElement(
+      statusMessage, 'Successfully added ',
+      'Could not add reviewer successfully');
+  };
+
+  this.showReviewersAssignedToRole = async function(role) {
+    await action.sendKeys(
+      'Reviewer method dropdown', reviewerMethodDropdown, 'By Role');
+    await action.sendKeys(
+      'Reviewer role dropdown', reviewerRoleValueOption, role);
+    await action.click('View reviewer role button', viewReviewerRoleButton);
+  };
+
+  this.expectReviewerUsernamesStrToMatch = async function(
+      expectedUsernamesArrayStr) {
+    // The reviewer usernames that are shown after a user views reviewers by
+    // role in the 'view community reviewers' section. The result is displayed
+    // as a 'Usernames: ["username1", "username2"]' string.
+    await waitFor.visibilityOf(
+      reviewerUsernamesResult, 'Reviewer usernames result not visible.');
+    var reviewerUsernamesArrayStr = await reviewerUsernamesResult.getText();
+    expect(reviewerUsernamesArrayStr).toEqual(expectedUsernamesArrayStr);
   };
 };
 
